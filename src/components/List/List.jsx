@@ -41,7 +41,7 @@ export default function List({ updateTaskList, data }) {
 //       />
 //     );
 //   };
-  const [selectedRowKeys, setSelectedRowKeys] = useState(data.filter(value => value.status === typeOfStatus.DONE).map(item => item.key));
+const [selectedRowKeys, setSelectedRowKeys] = useState(data?.filter(value => value.status === typeOfStatus.DONE).map(item => item.key));
   const columns = [
     { title: "Task ID", dataIndex: "id", key: "id" },
     { title: "Name", dataIndex: "name", key: "name" },
@@ -66,6 +66,9 @@ export default function List({ updateTaskList, data }) {
       ],
       onFilter: (value, record) => record.status.indexOf(value) === 0,
     },
+    { title: "Total Dependencies", dataIndex: "total_dependencies", key: "total_dependencies" },
+    { title: "Dependencies Done", dataIndex: "dependencies_done", key: "dependencies_done" },
+    { title: "Dependencies Complete", dataIndex: "dependencies_complete", key: "dependencies_complete" },
     {
       title: "Action",
       dataIndex: "operation",
@@ -83,13 +86,9 @@ export default function List({ updateTaskList, data }) {
           selectedRowKeys,
           type:  ListAttributes.rowSelectionType,
           hideSelectAll: true,
-          onChange: (_selectedRowKeys) => {
-            console.log("change", _selectedRowKeys)
-            setSelectedRowKeys(_selectedRowKeys)
-          },
-          onSelect: (record) => {
-            console.log("select", record)
-            updateTaskList(record.id);
+          onSelect: (record, _, selectedRows) => {
+            updateTaskList(record);
+            setSelectedRowKeys(selectedRows.map(row => row.key));
           }
         }}
         columns={columns}

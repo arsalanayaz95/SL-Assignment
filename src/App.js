@@ -17,6 +17,9 @@ function App() {
       description: "Start Working On This Task Thingy",
       status: typeOfStatus.IN_PROGRESS,
       parentId: 0,
+      total_dependencies: 0,
+      dependencies_done: 0,
+      dependencies_complete: 0,
     },
     {
       key: uuidv4(),
@@ -26,6 +29,9 @@ function App() {
         "While adding a new task and selecting parentId, check for dependency loop",
       status: typeOfStatus.IN_PROGRESS,
       parentId: 0,
+      total_dependencies: 0,
+      dependencies_done: 0,
+      dependencies_complete: 0,
     },
     {
       key: uuidv4(),
@@ -34,6 +40,9 @@ function App() {
       description: "Develop a popup form to add a new task to the list",
       status: typeOfStatus.DONE,
       parentId: 2,
+      total_dependencies: 0,
+      dependencies_done: 0,
+      dependencies_complete: 0,
     },
     {
       key: uuidv4(),
@@ -42,26 +51,37 @@ function App() {
       description: "Edit a task in-line and then save or cancel",
       status: typeOfStatus.IN_PROGRESS,
       parentId: 3,
+      total_dependencies: 0,
+      dependencies_done: 0,
+      dependencies_complete: 0,
     },
   ]);
 
-  const updateTaskList = (id) => {
-    const selectedTaskIndex = data.findIndex((_data) => _data.id === id);
+  const updateTaskList = (record) => {
+    const selectedTaskIndex = data.findIndex((_data) => _data.id === record.id);
     const dataCopy = [...data];
     if (dataCopy[selectedTaskIndex].status === typeOfStatus.IN_PROGRESS) {
       dataCopy[selectedTaskIndex].status = typeOfStatus.DONE;
-      // dataCopy[selectedTaskIndex].key = uuidv4();
-      setData(dataCopy);
-      console.log(data);
+      setData([...dataCopy]);
     } else {
       dataCopy[selectedTaskIndex].status = typeOfStatus.IN_PROGRESS;
-      // dataCopy[selectedTaskIndex].key = uuidv4();
-      setData(dataCopy);
+      setData([...dataCopy]);
     }
   };
 
-  const onCreate = (values) => {
-    console.log("Received values of form: ", values);
+  const onCreate = ({ name, parent }) => {
+    const newTask = {
+      key: uuidv4(),
+      id: data.length + 1,
+      name,
+      description: name,
+      status: typeOfStatus.IN_PROGRESS,
+      parentId: parent || 0,
+      total_dependencies: 0,
+      dependencies_done: 0,
+      dependencies_complete: 0,
+    };
+    setData([...data, newTask]);
     setVisible(false);
   };
   return (
