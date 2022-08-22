@@ -62,9 +62,11 @@ function App() {
     const dataCopy = [...data];
     if (dataCopy[selectedTaskIndex].status === typeOfStatus.IN_PROGRESS) {
       dataCopy[selectedTaskIndex].status = typeOfStatus.DONE;
+      dataCopy[selectedTaskIndex].key = uuidv4();
       setData([...dataCopy]);
     } else {
       dataCopy[selectedTaskIndex].status = typeOfStatus.IN_PROGRESS;
+      dataCopy[selectedTaskIndex].key = uuidv4();
       setData([...dataCopy]);
     }
   };

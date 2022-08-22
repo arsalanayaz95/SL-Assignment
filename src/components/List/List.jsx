@@ -1,5 +1,5 @@
 import { Table } from "antd";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ListAttributes } from "../../constant/listAttributes";
 import { typeOfStatus } from "../../constant/status";
 
