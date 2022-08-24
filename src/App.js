@@ -62,19 +62,21 @@ function App() {
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
 
   useEffect(() => {
-    //data.map((element) => getCheckedTasks(element), [data]);
-  });
+    const keys = data.map((element) => getCheckedTask(element))[0];
+    setSelectedRowKeys(Array.from(keys));
+  }, []);
 
-  function getCheckedTasks(element) {
+  let checks = new Set();
+  function getCheckedTask(element) {
     if (element.status === typeOfStatus.DONE) {
-      setSelectedRowKeys(element.key);
-      if (element.children !== undefined) {
-        for (let i = 0; i < element.children.length; i++) {
-          getCheckedTasks(element.children[i]);
-        }
+      checks.add(element.key);
+    }
+    if (element.children !== undefined) {
+      for (let i = 0; i < element.children.length; i++) {
+        getCheckedTask(element.children[i]);
       }
     }
-    console.log("selected", selectedRowKeys);
+    return checks;
   }
 
   let count = 0;

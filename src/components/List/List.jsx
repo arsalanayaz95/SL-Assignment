@@ -65,7 +65,6 @@ export default function List({
           hideSelectAll: true,
           onSelect: (record, _, selectedRows) => {
             updateTaskList(record);
-            console.log("List", selectedRows);
             setSelectedRowKeys(selectedRows.map((row) => row.key));
           },
         }}
