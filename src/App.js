@@ -6,18 +6,23 @@ import "antd/dist/antd.min.css";
 import { typeOfStatus } from "./constant/status";
 import List from "./components/List/List";
 import ListForm from "./components/ListForm/ListForm";
-import { getCurrentStatus, updateTaskById } from "./utils/helpers";
+import {
+  addChildToTask,
+  getCurrentStatus,
+  updateTaskById,
+} from "./utils/helpers";
 
 function App() {
   const [visible, setVisible] = useState(false);
+  const [lastId, setLastId] = useState(4);
   const [data, setData] = useState([
     {
       key: uuidv4(),
       id: 1,
       name: "Start the task",
-      description: "Start Working On This Task Thingy",
       status: typeOfStatus.DONE,
       parentId: 0,
+      children: null,
       total_dependencies: 0,
       dependencies_done: 0,
       dependencies_complete: 0,
@@ -26,8 +31,6 @@ function App() {
       key: uuidv4(),
       id: 2,
       name: "Implement Circular Dependency Check",
-      description:
-        "While adding a new task and selecting parentId, check for dependency loop",
       status: typeOfStatus.IN_PROGRESS,
       parentId: 0,
       children: [
@@ -35,9 +38,9 @@ function App() {
           key: uuidv4(),
           id: 3,
           name: "Add A New Task",
-          description: "Develop a popup form to add a new task to the list",
           status: typeOfStatus.DONE,
           parentId: 2,
+          children: null,
           total_dependencies: 0,
           dependencies_done: 0,
           dependencies_complete: 0,
@@ -46,9 +49,9 @@ function App() {
           key: uuidv4(),
           id: 4,
           name: "Edit Task Functionality",
-          description: "Edit a task in-line and then save or cancel",
           status: typeOfStatus.IN_PROGRESS,
           parentId: 2,
+          children: null,
           total_dependencies: 0,
           dependencies_done: 0,
           dependencies_complete: 0,
@@ -60,18 +63,39 @@ function App() {
     },
   ]);
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
+  const [flatTree, setFlatTree] = useState([]);
+  let flat = new Set();
+  let checks = new Set();
 
   useEffect(() => {
+    flat = new Set();
+    checks = new Set();
     const keys = data.map((element) => getCheckedTask(element))[0];
+    const tree = data.map((element) => flatten(element))[0];
+    setFlatTree(Array.from(tree));
     setSelectedRowKeys(Array.from(keys));
-  }, []);
+  }, [data]);
 
-  let checks = new Set();
+  function flatten(element) {
+    flat.add({
+      name: element.name,
+      id: element.id,
+      parentId: element.parentId,
+    });
+
+    if (element.children !== null) {
+      for (let i = 0; i < element.children.length; i++) {
+        flatten(element.children[i]);
+      }
+    }
+    return flat;
+  }
+
   function getCheckedTask(element) {
     if (element.status === typeOfStatus.DONE) {
       checks.add(element.key);
     }
-    if (element.children !== undefined) {
+    if (element.children !== null) {
       for (let i = 0; i < element.children.length; i++) {
         getCheckedTask(element.children[i]);
       }
@@ -87,7 +111,7 @@ function App() {
       }
     } else if (element.parentId === matchingId) {
       count++;
-    } else if (element.children !== undefined) {
+    } else if (element.children !== null) {
       let result = null;
       for (let i = 0; result === null && i < element.children.length; i++) {
         result = searchTaskList(element.children[i], matchingId, status);
@@ -137,16 +161,25 @@ function App() {
   const onCreate = ({ name, parent }) => {
     const newTask = {
       key: uuidv4(),
-      id: data.length + 1,
+      id: lastId + 1,
       name,
-      description: name,
       status: typeOfStatus.IN_PROGRESS,
       parentId: parent || 0,
+      children: null,
       total_dependencies: 0,
       dependencies_done: 0,
       dependencies_complete: 0,
     };
-    setData([...data, newTask]);
+    setLastId(lastId + 1);
+    if (!parent) {
+      setData([...data, newTask]);
+    } else {
+      const dataCopy = [...data];
+      const updatedCopy = dataCopy.map((element) =>
+        addChildToTask(parent, element, newTask)
+      );
+      setData([...updatedCopy]);
+    }
     setVisible(false);
   };
   return (
@@ -162,6 +195,7 @@ function App() {
       <ListForm
         visible={visible}
         onCreate={onCreate}
+        flatTree={flatTree}
         onCancel={() => {
           setVisible(false);
         }}

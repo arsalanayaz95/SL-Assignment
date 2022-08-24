@@ -12,7 +12,6 @@ export default function List({
   const columns = [
     { title: "Task ID", dataIndex: "id", key: "id" },
     { title: "Name", dataIndex: "name", key: "name" },
-    { title: "Description", dataIndex: "description", key: "description" },
     {
       title: "Status",
       dataIndex: "status",

@@ -1,6 +1,6 @@
 import { Form, Input, Modal, Select } from "antd";
 
-export default function ListForm({ visible, onCreate, onCancel }) {
+export default function ListForm({ visible, onCreate, onCancel, flatTree }) {
   const { Option } = Select;
   const [form] = Form.useForm();
   return (
@@ -47,8 +47,8 @@ export default function ListForm({ visible, onCreate, onCancel }) {
           label="Parent Task"
           rules={[{ required: false, message: "Please select parent task!" }]}
         >
-          <Select placeholder="select your parent task">
-            <Option value="other">Other</Option>
+          <Select placeholder="Select Your Parent Task (optional)">
+            {flatTree.map( (node) => <Option key={node.id} value={node.id}>{node.name}</Option> )}
           </Select>
         </Form.Item>
       </Form>
