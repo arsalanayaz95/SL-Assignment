@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "antd";
 import { v4 as uuidv4 } from "uuid";
 import "./App.css";
@@ -6,6 +6,7 @@ import "antd/dist/antd.min.css";
 import { typeOfStatus } from "./constant/status";
 import List from "./components/List/List";
 import ListForm from "./components/ListForm/ListForm";
+import { getCurrentStatus, updateTaskById } from "./utils/helpers";
 
 function App() {
   const [visible, setVisible] = useState(false);
@@ -15,7 +16,7 @@ function App() {
       id: 1,
       name: "Start the task",
       description: "Start Working On This Task Thingy",
-      status: typeOfStatus.IN_PROGRESS,
+      status: typeOfStatus.DONE,
       parentId: 0,
       total_dependencies: 0,
       dependencies_done: 0,
@@ -37,19 +38,17 @@ function App() {
           description: "Develop a popup form to add a new task to the list",
           status: typeOfStatus.DONE,
           parentId: 2,
-          children: [
-            {
-              key: uuidv4(),
-              id: 4,
-              name: "Edit Task Functionality",
-              description: "Edit a task in-line and then save or cancel",
-              status: typeOfStatus.IN_PROGRESS,
-              parentId: 3,
-              total_dependencies: 0,
-              dependencies_done: 0,
-              dependencies_complete: 0,
-            },
-          ],
+          total_dependencies: 0,
+          dependencies_done: 0,
+          dependencies_complete: 0,
+        },
+        {
+          key: uuidv4(),
+          id: 4,
+          name: "Edit Task Functionality",
+          description: "Edit a task in-line and then save or cancel",
+          status: typeOfStatus.IN_PROGRESS,
+          parentId: 2,
           total_dependencies: 0,
           dependencies_done: 0,
           dependencies_complete: 0,
@@ -60,55 +59,77 @@ function App() {
       dependencies_complete: 0,
     },
   ]);
+  const [selectedRowKeys, setSelectedRowKeys] = useState([]);
 
-  // useEffect(() => {
-  //   const dataCopy = [...data];
-  //   dataCopy.forEach((record) => {
-  //     const selectedTaskIndex = data.findIndex(
-  //       (_data) => _data.id === record.id
-  //     );
-  //     const dependencies = dataCopy.filter(
-  //       (_data) => _data.parentId === record.id
-  //     ).length;
-  //     dataCopy[selectedTaskIndex].total_dependencies = dependencies;
-  //   });
-  //   setData([...dataCopy]);
-  //   // const dependenciesComplete = dataCopy.filter(
-  //   //   (_data) =>
-  //   //     _data.status === typeOfStatus.COMPLETE && _data.parentId === record.id
-  //   // ).length;
-  // }, []);
+  useEffect(() => {
+    //data.map((element) => getCheckedTasks(element), [data]);
+  });
+
+  function getCheckedTasks(element) {
+    if (element.status === typeOfStatus.DONE) {
+      setSelectedRowKeys(element.key);
+      if (element.children !== undefined) {
+        for (let i = 0; i < element.children.length; i++) {
+          getCheckedTasks(element.children[i]);
+        }
+      }
+    }
+    console.log("selected", selectedRowKeys);
+  }
+
+  let count = 0;
+  function searchTaskList(element, matchingId, status = null) {
+    if (status) {
+      if (element.parentId === matchingId && element.status === status) {
+        count++;
+      }
+    } else if (element.parentId === matchingId) {
+      count++;
+    } else if (element.children !== undefined) {
+      let result = null;
+      for (let i = 0; result === null && i < element.children.length; i++) {
+        result = searchTaskList(element.children[i], matchingId, status);
+      }
+      return count;
+    }
+    return null;
+  }
 
   const updateTaskList = (record) => {
-    const selectedTaskIndex = data.findIndex((_data) => _data.id === record.id);
-    const updatedData = getUpdatedData(record, selectedTaskIndex);
-    updatedData[selectedTaskIndex].key = uuidv4();
-    setData([...updatedData]);
-  };
-
-  const getUpdatedData = (record, selectedTaskIndex) => {
     const dataCopy = [...data];
-    const dependencies = dataCopy.filter(
-      (_data) => _data.parentId === record.id
-    ).length;
-    const dependenciesComplete = dataCopy.filter(
-      (_data) =>
-        _data.status === typeOfStatus.COMPLETE && _data.parentId === record.id
-    ).length;
-    if (dataCopy[selectedTaskIndex].status === typeOfStatus.IN_PROGRESS) {
-      //PERFORM ACTION ON PARENTS
-      if (dependencies === 0 || dependenciesComplete === dependencies) {
-        dataCopy[selectedTaskIndex].status = typeOfStatus.COMPLETE;
-      } else {
-        dataCopy[selectedTaskIndex].status = typeOfStatus.DONE;
+    const updatedCopy = dataCopy.map((element) => {
+      count = 0;
+      const dependencies = searchTaskList(element, record.id);
+      const dependenciesComplete = searchTaskList(
+        element,
+        record.id,
+        typeOfStatus.COMPLETE
+      );
+      const currentStatus = getCurrentStatus(element, record.id);
+      switch (currentStatus) {
+        case typeOfStatus.IN_PROGRESS:
+          if (dependencies === 0 || dependenciesComplete === dependencies) {
+            updateTaskById(record.id, element, "status", typeOfStatus.COMPLETE);
+          } else {
+            updateTaskById(record.id, element, "status", typeOfStatus.DONE);
+          }
+          break;
+        case typeOfStatus.COMPLETE:
+        case typeOfStatus.DONE:
+          updateTaskById(
+            record.id,
+            element,
+            "status",
+            typeOfStatus.IN_PROGRESS
+          );
+          break;
+
+        default:
+          break;
       }
-    } else if (dataCopy[selectedTaskIndex].status === typeOfStatus.COMPLETE) {
-      dataCopy[selectedTaskIndex].status = typeOfStatus.IN_PROGRESS;
-    } else if (dataCopy[selectedTaskIndex].status === typeOfStatus.DONE) {
-      //PERFORM ACTION ON PARENTS
-      dataCopy[selectedTaskIndex].status = typeOfStatus.IN_PROGRESS;
-    }
-    return dataCopy;
+      return element;
+    });
+    setData([...updatedCopy]);
   };
 
   const onCreate = ({ name, parent }) => {
@@ -143,7 +164,12 @@ function App() {
           setVisible(false);
         }}
       />
-      <List updateTaskList={updateTaskList} data={data} />
+      <List
+        updateTaskList={updateTaskList}
+        data={data}
+        selectedRowKeys={selectedRowKeys}
+        setSelectedRowKeys={setSelectedRowKeys}
+      />
     </div>
   );
 }
