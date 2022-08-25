@@ -9,20 +9,34 @@ import ListForm from "./components/ListForm/ListForm";
 import {
   addChildToTask,
   getCurrentStatus,
+  updateParent,
   updateTaskById,
 } from "./utils/helpers";
 
 function App() {
   const [visible, setVisible] = useState(false);
-  const [lastId, setLastId] = useState(4);
+  const [lastId, setLastId] = useState(5);
+  // const [data, setData] = useState([]);
   const [data, setData] = useState([
     {
       key: uuidv4(),
       id: 1,
       name: "Start the task",
-      status: typeOfStatus.DONE,
+      status: typeOfStatus.IN_PROGRESS,
       parentId: 0,
-      children: null,
+      children: [
+        {
+          key: uuidv4(),
+          id: 5,
+          name: "Start the task",
+          status: typeOfStatus.IN_PROGRESS,
+          parentId: 1,
+          children: null,
+          total_dependencies: 0,
+          dependencies_done: 0,
+          dependencies_complete: 0,
+        },
+      ],
       total_dependencies: 0,
       dependencies_done: 0,
       dependencies_complete: 0,
@@ -68,12 +82,13 @@ function App() {
   let checks = new Set();
 
   useEffect(() => {
-    flat = new Set();
-    checks = new Set();
-    const keys = data.map((element) => getCheckedTask(element))[0];
-    const tree = data.map((element) => flatten(element))[0];
-    setFlatTree(Array.from(tree));
-    setSelectedRowKeys(Array.from(keys));
+    if (data.length > 0) {
+      const keys = data.map((element) => getCheckedTask(element))[0];
+      const tree = data.map((element) => flatten(element))[0];
+      setFlatTree(Array.from(tree));
+      setSelectedRowKeys(Array.from(keys));
+    }
+    // eslint-disable-next-line
   }, [data]);
 
   function flatten(element) {
@@ -92,7 +107,10 @@ function App() {
   }
 
   function getCheckedTask(element) {
-    if (element.status === typeOfStatus.DONE) {
+    if (
+      element.status === typeOfStatus.DONE ||
+      element.status === typeOfStatus.COMPLETE
+    ) {
       checks.add(element.key);
     }
     if (element.children !== null) {
@@ -103,20 +121,21 @@ function App() {
     return checks;
   }
 
-  let count = 0;
-  function searchTaskList(element, matchingId, status = null) {
-    if (status) {
-      if (element.parentId === matchingId && element.status === status) {
-        count++;
-      }
+  let countDependency = 0;
+  let countCompletedDependency = 0;
+  function searchTaskList(element, matchingId) {
+    if (
+      element.parentId === matchingId &&
+      element.status === typeOfStatus.COMPLETE
+    ) {
+      countCompletedDependency++;
     } else if (element.parentId === matchingId) {
-      count++;
+      countDependency++;
     } else if (element.children !== null) {
       let result = null;
       for (let i = 0; result === null && i < element.children.length; i++) {
-        result = searchTaskList(element.children[i], matchingId, status);
+        result = searchTaskList(element.children[i], matchingId);
       }
-      return count;
     }
     return null;
   }
@@ -124,18 +143,18 @@ function App() {
   const updateTaskList = (record) => {
     const dataCopy = [...data];
     const updatedCopy = dataCopy.map((element) => {
-      count = 0;
-      const dependencies = searchTaskList(element, record.id);
-      const dependenciesComplete = searchTaskList(
-        element,
-        record.id,
-        typeOfStatus.COMPLETE
-      );
+      countDependency = 0;
+      countCompletedDependency = 0;
+      searchTaskList(element, record.id);
       const currentStatus = getCurrentStatus(element, record.id);
       switch (currentStatus) {
         case typeOfStatus.IN_PROGRESS:
-          if (dependencies === 0 || dependenciesComplete === dependencies) {
+          if (
+            countDependency === 0 ||
+            countCompletedDependency === countDependency
+          ) {
             updateTaskById(record.id, element, "status", typeOfStatus.COMPLETE);
+            updateParent(record.parentId, element);
           } else {
             updateTaskById(record.id, element, "status", typeOfStatus.DONE);
           }
@@ -149,7 +168,6 @@ function App() {
             typeOfStatus.IN_PROGRESS
           );
           break;
-
         default:
           break;
       }

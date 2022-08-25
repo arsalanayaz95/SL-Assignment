@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
+import { typeOfStatus } from "../constant/status";
 
 export function updateTaskById(id, data, property, value) {
   if (data.id === id) {
@@ -13,10 +14,27 @@ export function updateTaskById(id, data, property, value) {
   return data;
 }
 
-export function addChildToTask(parentId, data, task) {
-  if (data.id === parentId && data.children === null) {
-    data.children = [task];
+export function updateParent(parentId, data) {
+  if (data.id === parentId && data.status === typeOfStatus.DONE) {
+    data["status"] = typeOfStatus.COMPLETE;
     data["key"] = uuidv4();
+  }
+  if (data.children !== null && data.children.length > 0) {
+    for (let i = 0; i < data.children.length; i++) {
+      data.children[i] = updateParent(parentId, data.children[i]);
+    }
+  }
+  return data;
+}
+
+export function addChildToTask(parentId, data, task) {
+  if (data.id === parentId) {
+    if (data.children === null) {
+      data.children = [task];
+      data["key"] = uuidv4();
+    } else {
+      data.children.push(task);
+    }
   }
   if (data.children !== null && data.children.length > 0) {
     for (let i = 0; i < data.children.length; i++) {

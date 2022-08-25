@@ -47,12 +47,6 @@ export default function List({
       dataIndex: "dependencies_complete",
       key: "dependencies_complete",
     },
-    {
-      title: "Action",
-      dataIndex: "operation",
-      key: "operation",
-      render: () => <span>EDIT | DELETE</span>,
-    },
   ];
   return (
     <div>
