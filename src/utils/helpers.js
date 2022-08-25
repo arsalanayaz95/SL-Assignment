@@ -14,9 +14,22 @@ export function updateTaskById(id, data, property, value) {
   return data;
 }
 
-export function updateParent(parentId, data) {
+export function updateParent(parentId, data, status) {
   if (data.id === parentId && data.status === typeOfStatus.DONE) {
-    data["status"] = typeOfStatus.COMPLETE;
+    const children = data.children.length;
+    const completed = data.children.filter(
+      (child) => child.status === typeOfStatus.COMPLETE
+    ).length;
+    if (children === completed) {
+      data["status"] = typeOfStatus.COMPLETE;
+      data["key"] = uuidv4();
+    }
+  } else if (
+    data.id === parentId &&
+    data.status === typeOfStatus.COMPLETE &&
+    status === typeOfStatus.DONE
+  ) {
+    data["status"] = typeOfStatus.DONE;
     data["key"] = uuidv4();
   }
   if (data.children !== null && data.children.length > 0) {

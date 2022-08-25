@@ -48,7 +48,7 @@ export default function ListForm({ visible, onCreate, onCancel, flatTree }) {
           rules={[{ required: false, message: "Please select parent task!" }]}
         >
           <Select placeholder="Select Your Parent Task (optional)">
-            {flatTree.map( (node) => <Option key={node.id} value={node.id}>{node.name}</Option> )}
+            {flatTree.map( (node) => <Option key={node.id} value={node.id}>{node.id} - {node.name}</Option> )}
           </Select>
         </Form.Item>
       </Form>

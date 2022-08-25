@@ -85,6 +85,7 @@ function App() {
     if (data.length > 0) {
       const keys = data.map((element) => getCheckedTask(element))[0];
       const tree = data.map((element) => flatten(element))[0];
+      // const updatedData = data.map((element) => setDependencies(element))[0];
       setFlatTree(Array.from(tree));
       setSelectedRowKeys(Array.from(keys));
     }
@@ -129,6 +130,7 @@ function App() {
       element.status === typeOfStatus.COMPLETE
     ) {
       countCompletedDependency++;
+      countDependency++;
     } else if (element.parentId === matchingId) {
       countDependency++;
     } else if (element.children !== null) {
@@ -154,19 +156,22 @@ function App() {
             countCompletedDependency === countDependency
           ) {
             updateTaskById(record.id, element, "status", typeOfStatus.COMPLETE);
-            updateParent(record.parentId, element);
+            updateParent(record.parentId, element, typeOfStatus.COMPLETE);
           } else {
             updateTaskById(record.id, element, "status", typeOfStatus.DONE);
           }
           break;
         case typeOfStatus.COMPLETE:
         case typeOfStatus.DONE:
-          updateTaskById(
-            record.id,
-            element,
-            "status",
-            typeOfStatus.IN_PROGRESS
-          );
+          if (record.children === null) {
+            updateTaskById(
+              record.id,
+              element,
+              "status",
+              typeOfStatus.IN_PROGRESS
+            );
+          }
+          updateParent(record.parentId, element, typeOfStatus.DONE);
           break;
         default:
           break;
